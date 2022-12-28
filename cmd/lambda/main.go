@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"log"
+	"net/http"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -14,7 +16,7 @@ import (
 )
 
 var (
-	db database.DynaDB
+	db *database.DynaDB
 )
 
 func main() {
@@ -25,7 +27,7 @@ func main() {
 	if err != nil {
 		return
 	}
-	db = database.NewDynaDB(awsSession)
+	err, db = database.NewDynaDB(awsSession)
 	lambda.Start(handler)
 }
 
@@ -39,56 +41,81 @@ func jsonResponse(status int, body interface{}) (*events.APIGatewayProxyResponse
 	return &resp, nil
 }
 
-func statusResponse(status int) (*events.APIGatewayProxyResponse, error) {
-	resp := events.APIGatewayProxyResponse{Headers: map[string]string{"Content-Type": "application/json"}}
-	resp.StatusCode = status
-	return &resp, nil
+func dataResponse(data interface{}) (*events.APIGatewayProxyResponse, error) {
+	return jsonResponse(http.StatusOK, data)
+}
+
+func messageResponse(msg string) (*events.APIGatewayProxyResponse, error) {
+	return jsonResponse(http.StatusOK, model.NewSuccessMessage(msg))
+}
+
+func errorResponse(msg string) (*events.APIGatewayProxyResponse, error) {
+	return jsonResponse(http.StatusBadRequest, model.NewErrorMessage(msg))
 }
 
 func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayProxyResponse, error) {
 	id, hasID := req.PathParameters["id"]
 
-	resp := events.APIGatewayProxyResponse{Headers: map[string]string{"Content-Type": "application/json"}}
-	resp.StatusCode = 200
-
 	switch req.RequestContext.HTTP.Method {
 	case "GET":
 		if hasID {
-			var status, data = handlers.V1TodoGetByID(db, id)
-			if status == 200 {
-				return jsonResponse(status, data)
+			err, data := handlers.V1TodoGetByID(db, id)
+			if err != nil {
+				log.Printf("Error while getting todo %s: %s", id, err)
+				return errorResponse("There was an error loading the To-Do object.")
 			} else {
-				return statusResponse(status)
+				return dataResponse(data)
 			}
 		} else {
-			var status, data = handlers.V1TodoGet(db)
-			if status == 200 {
-				return jsonResponse(status, data)
+			err, data := handlers.V1TodoGet(db)
+			if err != nil {
+				log.Printf("Error while getting todos: %s", err)
+				return errorResponse("There was an error loading the To-Do objects.")
 			} else {
-				return statusResponse(status)
+				return dataResponse(data)
 			}
 		}
 	case "PUT":
 		if hasID {
 			todo := model.ToDo{}
 			if err := json.Unmarshal([]byte(req.Body), &todo); err != nil {
-				return statusResponse(400)
+				log.Printf("Error putting existing todo %s: %s", id, err)
+				return errorResponse("There was an error while updating the To-Do object.")
 			}
-			return statusResponse(handlers.V1TodoPutByID(db, id, todo))
+			err := handlers.V1TodoPutByID(db, id, todo)
+			if err != nil {
+				log.Printf("Error while updating todo %s: %s", id, err)
+				return errorResponse("There was an error while updating the To-Do object.")
+			} else {
+				return messageResponse("To-Do object updated successfully.")
+			}
 		} else {
 			todo := model.ToDo{}
 			if err := json.Unmarshal([]byte(req.Body), &todo); err != nil {
-				return statusResponse(400)
+				log.Printf("Error while creating todo: %s", err)
+				return errorResponse("There was an error while creating a new To-Do object.")
 			}
-			return statusResponse(handlers.V1TodoPut(db, todo))
+			err := handlers.V1TodoPut(db, todo)
+			if err != nil {
+				log.Printf("Error while creating todo: %s", err)
+				return errorResponse("There was an error while creating a new To-Do object.")
+			} else {
+				return messageResponse("To-Do object created successfully.")
+			}
 		}
 	case "DELETE":
 		if hasID {
-			return statusResponse(handlers.V1TodoDeleteByID(db, id))
+			err := handlers.V1TodoDeleteByID(db, id)
+			if err != nil {
+				log.Printf("Error while deleting todo %s: %s", id, err)
+				return errorResponse("There has been an error while deleting the To-Do object.")
+			} else {
+				return messageResponse("To-Do object deleted successfully.")
+			}
 		} else {
-			return statusResponse(400)
+			return jsonResponse(http.StatusNotFound, model.NewErrorMessage("Invalid Route."))
 		}
 	default:
-		return statusResponse(499)
+		return jsonResponse(http.StatusNotFound, model.NewErrorMessage("Invalid Route."))
 	}
 }

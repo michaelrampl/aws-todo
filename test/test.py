@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import requests, pytest, uuid, json, sys
+import requests, pytest, uuid
 
 headers = {"Content-Type": "application/json"}
 

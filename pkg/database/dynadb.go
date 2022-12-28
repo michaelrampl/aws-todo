@@ -1,7 +1,7 @@
 package database
 
 import (
-	"log"
+	"errors"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -16,55 +16,45 @@ type DynaDB struct {
 	tableName string
 }
 
-func NewDynaDB(session *session.Session) DynaDB {
+func NewDynaDB(session *session.Session) (error, *DynaDB) {
 	dynaClient := dynamodb.New(session)
-	return DynaDB{session: session, client: dynaClient, tableName: *aws.String("todos")}
+	return nil, &DynaDB{session: session, client: dynaClient, tableName: *aws.String("todos")}
 }
 
-func (db DynaDB) GetTodos() (int, []model.ToDo) {
+func (db DynaDB) GetTodos() (error, []model.ToDo) {
 	todos := []model.ToDo{}
 
 	input := &dynamodb.ScanInput{TableName: &db.tableName}
 	result, err := db.client.Scan(input)
 	if err != nil {
-		log.Printf("Error while loading all todos: %s", err)
-		return 400, todos
-
+		return err, todos
 	}
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &todos)
 	if err != nil {
-		log.Printf("Error while unmarshalling todos: %s", err)
-		return 400, todos
+		return err, todos
 	}
 
-	return 200, todos
-
+	return nil, todos
 }
 
-func (db DynaDB) SetTodo(todo model.ToDo) int {
+func (db DynaDB) SetTodo(todo model.ToDo) error {
 	av, err := dynamodbattribute.MarshalMap(todo)
 	if err != nil {
-		log.Printf("Error while marshalling todo: %s", err)
-		return 400
+		return err
 	}
-
 	input := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(db.tableName),
 	}
-
 	_, err = db.client.PutItem(input)
 	if err != nil {
-		log.Printf("Error while saving todo: %s", err)
-		return 400
+		return err
 	}
-
-	return 200
+	return nil
 }
 
-func (db DynaDB) GetTodo(id string) (int, model.ToDo) {
+func (db DynaDB) GetTodo(id string) (error, model.ToDo) {
 	todo := model.ToDo{}
-
 	input := &dynamodb.GetItemInput{
 		TableName: &db.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
@@ -75,32 +65,26 @@ func (db DynaDB) GetTodo(id string) (int, model.ToDo) {
 	}
 	result, err := db.client.GetItem(input)
 	if err != nil {
-		log.Printf("Error while loading todo %s: %s", id, err)
-		return 400, todo
+		return err, todo
 	}
-
 	err = dynamodbattribute.UnmarshalMap(result.Item, &todo)
 	if err != nil {
-		log.Printf("Error while unmarshalling todo %s: %s", id, err)
-		return 400, todo
+		return err, todo
 	}
 	if todo.Id == "" {
-		log.Printf("Could not find todo %s", id)
-		return 400, todo
+		return errors.New("No todo with the specified id found"), todo
 	}
-
-	return 200, todo
+	return nil, todo
 }
 
-func (db DynaDB) UpdateTodo(id string, todo model.ToDo) int {
+func (db DynaDB) UpdateTodo(id string, todo model.ToDo) error {
 	if todo.Id != id { // recreate if id is not identical
 		ret := db.DeleteToDo(id)
-		if ret != 200 {
+		if ret != nil {
 			return ret
 		}
 		return db.SetTodo(todo)
 	}
-
 	input := &dynamodb.UpdateItemInput{
 		TableName: &db.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
@@ -110,22 +94,18 @@ func (db DynaDB) UpdateTodo(id string, todo model.ToDo) int {
 		},
 		UpdateExpression: aws.String("set title = :title, description = :description"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			//":id":          {S: &todo.Id},
 			":title":       {S: &todo.Title},
 			":description": {S: &todo.Description},
 		},
 	}
-
 	_, err := db.client.UpdateItem(input)
 	if err != nil {
-		log.Printf("Error while updating todo %s: %s", id, err)
-		return 400
+		return err
 	}
-
-	return 200
+	return nil
 }
 
-func (db DynaDB) DeleteToDo(id string) int {
+func (db DynaDB) DeleteToDo(id string) error {
 	input := &dynamodb.DeleteItemInput{
 		TableName: &db.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
@@ -136,9 +116,7 @@ func (db DynaDB) DeleteToDo(id string) int {
 	}
 	_, err := db.client.DeleteItem(input)
 	if err != nil {
-		log.Printf("Error while deleting todo %s: %s", id, err)
-		return 400
+		return err
 	}
-
-	return 200
+	return nil
 }

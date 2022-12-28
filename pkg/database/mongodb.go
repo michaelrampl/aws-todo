@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/michaelrampl/aws-todo/pkg/model"
@@ -17,76 +16,66 @@ type MongoDB struct {
 	tableName string
 }
 
-func NewMongoDB(uri string) MongoDB {
+func NewMongoDB(uri string) (error, *MongoDB) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatal(err)
+		return err, nil
 	}
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Minute)
 	err = client.Connect(ctx)
 	if err != nil {
-		log.Fatal(err)
+		return err, nil
 	}
-	return MongoDB{client: client, context: &ctx, tableName: "todos"}
+	return nil, &MongoDB{client: client, context: &ctx, tableName: "todos"}
 }
 
-func (db MongoDB) GetTodos() (int, []model.ToDo) {
-	log.Printf("GetTodos")
+func (db MongoDB) GetTodos() (error, []model.ToDo) {
 	todos := []model.ToDo{}
 	collection := db.client.Database(db.tableName).Collection(db.tableName)
 	cursor, err := collection.Find(*db.context, bson.M{})
 	if err != nil {
-		return 400, todos
+		return err, todos
 	}
 	if err = cursor.All(*db.context, &todos); err != nil {
-		log.Printf("Error while loading all todos: %s", err)
-		return 400, todos
+		return err, todos
 	}
-	return 200, todos
+	return nil, todos
 
 }
 
-func (db MongoDB) SetTodo(todo model.ToDo) int {
-	log.Printf("SetTodo")
+func (db MongoDB) SetTodo(todo model.ToDo) error {
 	collection := db.client.Database(db.tableName).Collection(db.tableName)
 	_, err := collection.InsertOne(*db.context, todo)
 	if err != nil {
-		log.Printf("Error while inserting todo into the database: %s", err)
-		return 400
+		return err
 	}
-	return 200
+	return nil
 }
 
-func (db MongoDB) GetTodo(id string) (int, model.ToDo) {
-	log.Printf("GetTodo")
+func (db MongoDB) GetTodo(id string) (error, model.ToDo) {
 	collection := db.client.Database(db.tableName).Collection(db.tableName)
 	todo := model.ToDo{}
 	err := collection.FindOne(*db.context, bson.M{"id": id}).Decode(&todo)
 	if err != nil {
-		log.Printf("Error while loading todo with id %s from the database: %s", id, err)
-		return 400, todo
+		return err, todo
 	}
-	return 200, todo
+	return nil, todo
 }
 
-func (db MongoDB) UpdateTodo(id string, todo model.ToDo) int {
-	log.Printf("UpdateTodo")
+func (db MongoDB) UpdateTodo(id string, todo model.ToDo) error {
 	collection := db.client.Database(db.tableName).Collection(db.tableName)
 	_, err := collection.UpdateOne(*db.context, bson.M{"id": id}, bson.D{{"$set", todo}})
 	if err != nil {
-		log.Printf("Error while updating todo with id %s from the database: %s", id, err)
-		return 400
+		return err
 	}
-	return 200
+	return nil
 }
 
-func (db MongoDB) DeleteToDo(id string) int {
-	log.Printf("DeleteToDo")
+func (db MongoDB) DeleteToDo(id string) error {
 	collection := db.client.Database(db.tableName).Collection(db.tableName)
 	_, err := collection.DeleteOne(*db.context, bson.M{"id": id})
 	if err != nil {
-		log.Printf("Error while deleting todo with id %s from the database: %s", id, err)
-		return 400
+		return err
 	}
-	return 200
+	return nil
 }

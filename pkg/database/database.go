@@ -5,9 +5,9 @@ import (
 )
 
 type Database interface {
-	GetTodos() (int, []model.ToDo)
-	SetTodo(todo model.ToDo) int
-	UpdateTodo(id string, todo model.ToDo) int
-	GetTodo(id string) (int, model.ToDo)
-	DeleteToDo(id string) int
+	GetTodos() (error, []model.ToDo)
+	SetTodo(todo model.ToDo) error
+	UpdateTodo(id string, todo model.ToDo) error
+	GetTodo(id string) (error, model.ToDo)
+	DeleteToDo(id string) error
 }
