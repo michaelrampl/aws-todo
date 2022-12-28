@@ -103,6 +103,10 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayProxyRespons
 				log.Printf("Error putting existing todo %s: %s", id, err)
 				return errorResponse(globals.TODO_UPDATE_ERROR)
 			}
+			if err := todo.Validate(); err != nil {
+				log.Printf("Error while validating todo object: %s", err)
+				return errorResponse(globals.TODO_UPDATE_ERROR)
+			}
 			err := handlers.V1TodoPutByID(db, id, todo)
 			if err != nil {
 				log.Printf("Error while updating todo %s: %s", id, err)
@@ -114,6 +118,10 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayProxyRespons
 			todo := model.ToDo{}
 			if err := json.Unmarshal([]byte(req.Body), &todo); err != nil {
 				log.Printf("Error while creating todo: %s", err)
+				return errorResponse(globals.TODO_CREATE_ERROR)
+			}
+			if err := todo.Validate(); err != nil {
+				log.Printf("Error while validating todo object: %s", err)
 				return errorResponse(globals.TODO_CREATE_ERROR)
 			}
 			err := handlers.V1TodoPut(db, todo)

@@ -38,6 +38,9 @@ func (db DynaDB) GetTodos() (error, []model.ToDo) {
 }
 
 func (db DynaDB) SetTodo(todo model.ToDo) error {
+	if err, _ := db.GetTodo(todo.Id); err == nil {
+		return errors.New("Todo object with this id already exists")
+	}
 	av, err := dynamodbattribute.MarshalMap(todo)
 	if err != nil {
 		return err
@@ -78,6 +81,9 @@ func (db DynaDB) GetTodo(id string) (error, model.ToDo) {
 }
 
 func (db DynaDB) UpdateTodo(id string, todo model.ToDo) error {
+	if err, _ := db.GetTodo(id); err != nil {
+		return errors.New("No ToDo with the given id exists")
+	}
 	if todo.Id != id { // recreate if id is not identical
 		ret := db.DeleteToDo(id)
 		if ret != nil {

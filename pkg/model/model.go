@@ -18,7 +18,7 @@ type ToDo struct {
 }
 
 // Checks if an ToDO object is valid
-func validate(todo *ToDo) error {
+func (todo *ToDo) Validate() error {
 	validate := validator.New()
 	return validate.Struct(todo)
 }

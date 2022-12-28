@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/michaelrampl/aws-todo/pkg/model"
@@ -44,6 +45,9 @@ func (db MongoDB) GetTodos() (error, []model.ToDo) {
 }
 
 func (db MongoDB) SetTodo(todo model.ToDo) error {
+	if err, _ := db.GetTodo(todo.Id); err == nil {
+		return errors.New("Todo object with this id already exists")
+	}
 	collection := db.client.Database(db.tableName).Collection(db.tableName)
 	_, err := collection.InsertOne(*db.context, todo)
 	if err != nil {
@@ -63,6 +67,9 @@ func (db MongoDB) GetTodo(id string) (error, model.ToDo) {
 }
 
 func (db MongoDB) UpdateTodo(id string, todo model.ToDo) error {
+	if err, _ := db.GetTodo(id); err != nil {
+		return errors.New("No ToDo with the given id exists")
+	}
 	collection := db.client.Database(db.tableName).Collection(db.tableName)
 	_, err := collection.UpdateOne(*db.context, bson.M{"id": id}, bson.D{{"$set", todo}})
 	if err != nil {

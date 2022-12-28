@@ -43,7 +43,10 @@ func main() {
 			log.Printf("Error while parsing body in route %s: %s", c.Route().Path, err)
 			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_CREATE_ERROR))
 		}
-
+		if err := todo.Validate(); err != nil {
+			log.Printf("Error while validating todo object in route %s: %s", c.Route().Path, err)
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_CREATE_ERROR))
+		}
 		err := handlers.V1TodoPut(db, todo)
 		if err != nil {
 			log.Printf("Error while creating todo %s: %s", c.Params("id"), err)
@@ -71,6 +74,10 @@ func main() {
 		if err := c.BodyParser(&todo); err != nil {
 			log.Printf("Error while parsing body in route %s: %s", c.Route().Path, err)
 			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_UPDATE_ERROR))
+		}
+		if err := todo.Validate(); err != nil {
+			log.Printf("Error while validating todo object in route %s: %s", c.Route().Path, err)
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_CREATE_ERROR))
 		}
 		err := handlers.V1TodoPutByID(db, c.Params("id"), todo)
 		if err != nil {
