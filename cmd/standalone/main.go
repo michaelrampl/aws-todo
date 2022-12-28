@@ -12,13 +12,19 @@ import (
 )
 
 func main() {
+
+	// Create instance of go fiber app
 	app := fiber.New()
-	db_uri := os.Getenv("TODO_MONGODB_URI")
-	err, db := database.NewMongoDB(db_uri)
+
+	// Create the instance of a MongoDB connector
+	// Load the connection uri from the environment
+	err, db := database.NewMongoDB(os.Getenv("TODO_MONGODB_URI"))
 	if err != nil {
+		// Stop Application if there has been an error connecting to the db
 		log.Fatalf("Could not connect to mongodb: %s", err)
 	}
 
+	// Get all todo objects from the database
 	app.Get("/v1/todo", func(c *fiber.Ctx) error {
 		err, data := handlers.V1TodoGet(db)
 		if err != nil {
@@ -29,6 +35,7 @@ func main() {
 		}
 	})
 
+	// Put a new todo object
 	app.Put("/v1/todo", func(c *fiber.Ctx) error {
 		todo := model.ToDo{}
 		if err := c.BodyParser(&todo); err != nil {
@@ -45,6 +52,7 @@ func main() {
 
 	})
 
+	// Get a single todo object based on the id
 	app.Get("/v1/todo/:id", func(c *fiber.Ctx) error {
 		err, data := handlers.V1TodoGetByID(db, c.Params("id"))
 		if err != nil {
@@ -55,6 +63,7 @@ func main() {
 		}
 	})
 
+	// Put/Update an existing todo object based on its id
 	app.Put("/v1/todo/:id", func(c *fiber.Ctx) error {
 		todo := model.ToDo{}
 		if err := c.BodyParser(&todo); err != nil {
@@ -70,6 +79,7 @@ func main() {
 		}
 	})
 
+	// Delete an existing todo object based on its id
 	app.Delete("/v1/todo/:id", func(c *fiber.Ctx) error {
 		err := handlers.V1TodoDeleteByID(db, c.Params("id"))
 		if err != nil {
