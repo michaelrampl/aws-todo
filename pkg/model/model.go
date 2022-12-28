@@ -1,16 +1,26 @@
 package model
 
+import (
+	"gopkg.in/go-playground/validator.v9"
+)
+
 // Represents a todo object
 type ToDo struct {
 
 	// Identifier of the ToDo object in uuid format
-	Id string `json:"id" bson:"id"`
+	Id string `json:"id" bson:"id" validate:"required,uuid4"`
 
 	// Title of the ToDo object
-	Title string `json:"title" bson:"title"`
+	Title string `json:"title" bson:"title" validate:"required,ascii,min=3,max=100"`
 
 	// Optional description of the ToDo object
-	Description string `json:"description" bson:"description"`
+	Description string `json:"description" bson:"description" validate:"ascii,max=500"`
+}
+
+// Checks if an ToDO object is valid
+func validate(todo *ToDo) error {
+	validate := validator.New()
+	return validate.Struct(todo)
 }
 
 // Represents an Success Message returned to the user

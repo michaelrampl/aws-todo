@@ -4,16 +4,16 @@ import requests, pytest, uuid
 
 headers = {"Content-Type": "application/json"}
 
-def test_todo_set(request, capsys):
+def test_todo_set_ok(request, capsys):
     todo = {
         "id": str(uuid.uuid4()),
         "title": "Title",
         "description": "Description"
     }
     response = requests.put(request.config.option.url + "/v1/todo", json=todo, headers=headers)
-    pytest.shared = todo
     request.config.cache.set("shared_todo", todo)
     assert response.status_code == 200
+
 
 def test_todos_get(request, capsys):
     response = requests.get(request.config.option.url + "/v1/todo")

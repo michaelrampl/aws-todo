@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/michaelrampl/aws-todo/pkg/database"
+	"github.com/michaelrampl/aws-todo/pkg/globals"
 	"github.com/michaelrampl/aws-todo/pkg/handlers"
 	"github.com/michaelrampl/aws-todo/pkg/model"
 )
@@ -29,7 +30,7 @@ func main() {
 		err, data := handlers.V1TodoGet(db)
 		if err != nil {
 			log.Printf("Error while getting todos: %s", err)
-			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage("There was an error loading the To-Do objects."))
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_GET_ALL_ERROR))
 		} else {
 			return c.Status(http.StatusOK).JSON(data)
 		}
@@ -40,14 +41,15 @@ func main() {
 		todo := model.ToDo{}
 		if err := c.BodyParser(&todo); err != nil {
 			log.Printf("Error while parsing body in route %s: %s", c.Route().Path, err)
-			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage("There was an error while creating a new To-Do object."))
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_CREATE_ERROR))
 		}
+
 		err := handlers.V1TodoPut(db, todo)
 		if err != nil {
 			log.Printf("Error while creating todo %s: %s", c.Params("id"), err)
-			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage("There was an error while creating a new To-Do object."))
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_CREATE_ERROR))
 		} else {
-			return c.Status(http.StatusOK).JSON(model.NewSuccessMessage("To-Do object created successfully."))
+			return c.Status(http.StatusOK).JSON(model.NewSuccessMessage(globals.TODO_CREATE_SUCCESS))
 		}
 
 	})
@@ -57,7 +59,7 @@ func main() {
 		err, data := handlers.V1TodoGetByID(db, c.Params("id"))
 		if err != nil {
 			log.Printf("Error while getting todo %s: %s", c.Params("id"), err)
-			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage("There was an error loading the To-Do object."))
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_GET_ERROR))
 		} else {
 			return c.Status(http.StatusOK).JSON(data)
 		}
@@ -68,14 +70,14 @@ func main() {
 		todo := model.ToDo{}
 		if err := c.BodyParser(&todo); err != nil {
 			log.Printf("Error while parsing body in route %s: %s", c.Route().Path, err)
-			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage("There was an error while updating the To-Do object."))
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_UPDATE_ERROR))
 		}
 		err := handlers.V1TodoPutByID(db, c.Params("id"), todo)
 		if err != nil {
 			log.Printf("Error while updating todo %s: %s", c.Params("id"), err)
-			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage("There was an error while updating the To-Do object."))
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_UPDATE_ERROR))
 		} else {
-			return c.Status(http.StatusOK).JSON(model.NewSuccessMessage("To-Do object updated successfully."))
+			return c.Status(http.StatusOK).JSON(model.NewSuccessMessage(globals.TODO_UPDATE_SUCCESS))
 		}
 	})
 
@@ -84,9 +86,9 @@ func main() {
 		err := handlers.V1TodoDeleteByID(db, c.Params("id"))
 		if err != nil {
 			log.Printf("Error deleting getting todo %s: %s", c.Params("id"), err)
-			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage("There has been an error while deleting the To-Do object."))
+			return c.Status(http.StatusBadRequest).JSON(model.NewErrorMessage(globals.TODO_DELETE_ERROR))
 		} else {
-			return c.Status(http.StatusOK).JSON(model.NewSuccessMessage("To-Do object deleted successfully."))
+			return c.Status(http.StatusOK).JSON(model.NewSuccessMessage(globals.TODO_DELETE_SUCCESS))
 		}
 	})
 

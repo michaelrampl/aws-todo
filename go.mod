@@ -5,6 +5,12 @@ go 1.19
 require github.com/aws/aws-sdk-go-v2/service/dynamodb v1.17.9
 
 require (
+	github.com/go-playground/locales v0.14.0 // indirect
+	github.com/go-playground/universal-translator v0.18.0 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
+)
+
+require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/aws/aws-lambda-go v1.36.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.167 // indirect
@@ -32,4 +38,5 @@ require (
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
+	gopkg.in/go-playground/validator.v9 v9.31.0
 )

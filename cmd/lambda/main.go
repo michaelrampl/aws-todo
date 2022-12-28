@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/michaelrampl/aws-todo/pkg/database"
+	"github.com/michaelrampl/aws-todo/pkg/globals"
 	"github.com/michaelrampl/aws-todo/pkg/handlers"
 	"github.com/michaelrampl/aws-todo/pkg/model"
 )
@@ -82,7 +83,7 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayProxyRespons
 			err, data := handlers.V1TodoGetByID(db, id)
 			if err != nil {
 				log.Printf("Error while getting todo %s: %s", id, err)
-				return errorResponse("There was an error loading the To-Do object.")
+				return errorResponse(globals.TODO_GET_ERROR)
 			} else {
 				return dataResponse(data)
 			}
@@ -90,7 +91,7 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayProxyRespons
 			err, data := handlers.V1TodoGet(db)
 			if err != nil {
 				log.Printf("Error while getting todos: %s", err)
-				return errorResponse("There was an error loading the To-Do objects.")
+				return errorResponse(globals.TODO_GET_ALL_ERROR)
 			} else {
 				return dataResponse(data)
 			}
@@ -100,27 +101,27 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayProxyRespons
 			todo := model.ToDo{}
 			if err := json.Unmarshal([]byte(req.Body), &todo); err != nil {
 				log.Printf("Error putting existing todo %s: %s", id, err)
-				return errorResponse("There was an error while updating the To-Do object.")
+				return errorResponse(globals.TODO_UPDATE_ERROR)
 			}
 			err := handlers.V1TodoPutByID(db, id, todo)
 			if err != nil {
 				log.Printf("Error while updating todo %s: %s", id, err)
-				return errorResponse("There was an error while updating the To-Do object.")
+				return errorResponse(globals.TODO_UPDATE_ERROR)
 			} else {
-				return messageResponse("To-Do object updated successfully.")
+				return messageResponse(globals.TODO_UPDATE_SUCCESS)
 			}
 		} else { // if no id has been provided, create a new todo object
 			todo := model.ToDo{}
 			if err := json.Unmarshal([]byte(req.Body), &todo); err != nil {
 				log.Printf("Error while creating todo: %s", err)
-				return errorResponse("There was an error while creating a new To-Do object.")
+				return errorResponse(globals.TODO_CREATE_ERROR)
 			}
 			err := handlers.V1TodoPut(db, todo)
 			if err != nil {
 				log.Printf("Error while creating todo: %s", err)
-				return errorResponse("There was an error while creating a new To-Do object.")
+				return errorResponse(globals.TODO_CREATE_ERROR)
 			} else {
-				return messageResponse("To-Do object created successfully.")
+				return messageResponse(globals.TODO_CREATE_SUCCESS)
 			}
 		}
 	case "DELETE":
@@ -128,9 +129,9 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayProxyRespons
 			err := handlers.V1TodoDeleteByID(db, id)
 			if err != nil {
 				log.Printf("Error while deleting todo %s: %s", id, err)
-				return errorResponse("There has been an error while deleting the To-Do object.")
+				return errorResponse(globals.TODO_DELETE_ERROR)
 			} else {
-				return messageResponse("To-Do object deleted successfully.")
+				return messageResponse(globals.TODO_DELETE_SUCCESS)
 			}
 		} else {
 			return jsonResponse(http.StatusNotFound, model.NewErrorMessage("Invalid Route."))
