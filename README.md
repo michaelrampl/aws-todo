@@ -10,25 +10,24 @@ This binary implements the fiber framework and can be used as a standalone versi
 
 This binary is intended to be used as AWS Lambda function behind an API Gateway.
 
-## Structure
+# Structure
 
 Both binaries access the same handler but inject a different database (all based on a common interface). At the time being, either mongodb or dynamodb are possible backends.
 
-## Public AWS API
+# Public AWS API
 
-The AWS Lambda is publicly available on `https://d4rarz3yu2.execute-api.us-east-1.amazonaws.com/production`
+The AWS Lambda is publicly available on `https://d4rarz3yu2.execute-api.us-east-1.amazonAWS.com/production`
 
 
-## Tests
+# Tests
 
-Inside the testfolder there are 2 shell scripts utilizing test.py (uses pytest) to execute 15 tests on both a local or the aws instance
+Inside the test folder there are 2 shell scripts utilizing test.py (uses pytest) to execute 15 tests on both a local or the AWS instance
 This may look like the following snipped
 
 ```
 ====================================== test session starts ======================================
 platform linux -- Python 3.10.9, pytest-7.1.2, pluggy-1.0.0 -- /usr/bin/python3
 cachedir: .pytest_cache
-rootdir: /home/michael/Documents/Resume/sda_2022/aws-todo/test
 plugins: dependency-0.5.1, anyio-3.6.2
 collected 15 items                                                                              
 
